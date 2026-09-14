@@ -1,6 +1,7 @@
 package response
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -24,26 +25,26 @@ func FormatValidationError(err error) map[string][]string {
 		return make(map[string][]string)
 	}
 
-	validationErrors, ok := err.(validator.ValidationErrors)
-	if !ok {
+	var validationErrors validator.ValidationErrors
+	if !errors.As(err, &validationErrors) {
 		return map[string][]string{
 			"general": {err.Error()},
 		}
 	}
 
 	// Pre-size to avoid map growth when several fields fail.
-	errors := make(map[string][]string, len(validationErrors))
+	out := make(map[string][]string, len(validationErrors))
 	for _, fieldError := range validationErrors {
 		fieldName := getFieldName(fieldError)
 		errorMessage := getErrorMessage(fieldError, fieldName)
-		errors[fieldName] = append(errors[fieldName], errorMessage)
+		out[fieldName] = append(out[fieldName], errorMessage)
 	}
 
-	return errors
+	return out
 }
 
-// getFieldName extracts the field name from validation error
-// Converts struct field names to JSON field names using JSON tags
+// getFieldName extracts the field name from a validation error.
+// It prefers JSON-oriented names when struct context is available.
 func getFieldName(fieldError validator.FieldError) string {
 	structField := fieldError.StructField()
 	namespace := fieldError.Namespace()
@@ -54,18 +55,22 @@ func getFieldName(fieldError validator.FieldError) string {
 		if fieldName != "" && fieldName != structField {
 			return fieldName
 		}
+
 		return toCamelCase(structField)
 	}
+
 	if fieldName != "" {
 		return fieldName
 	}
+
 	if structField != "" {
 		return toCamelCase(structField)
 	}
+
 	return strings.ToLower(fieldName)
 }
 
-// toCamelCase converts "FirstName" to "firstName"
+// toCamelCase converts "FirstName" to "firstName".
 func toCamelCase(s string) string {
 	if len(s) == 0 {
 		return s
@@ -80,77 +85,58 @@ func toCamelCase(s string) string {
 	return strings.ToLower(s[:1]) + s[1:]
 }
 
-// getErrorMessage generates a human-readable error message from validation error
-func getErrorMessage(fieldError validator.FieldError, fieldName string) string {
+// validationTagMessages maps validator tags to Laravel-style sprintf templates.
+// Templates use one %s (field) or two %s (field, param).
+var validationTagMessages = map[string]string{
+	"required":         "The %s field is required.",
+	"email":            "The %s must be a valid email address.",
+	"min":              "The %s must be at least %s characters.",
+	"max":              "The %s may not be greater than %s characters.",
+	"len":              "The %s must be exactly %s characters.",
+	"numeric":          "The %s must be a number.",
+	"alpha":            "The %s may only contain letters.",
+	"alphanum":         "The %s may only contain letters and numbers.",
+	"url":              "The %s must be a valid URL.",
+	"uuid":             "The %s must be a valid UUID.",
+	"oneof":            "The %s must be one of: %s.",
+	"gte":              "The %s must be greater than or equal to %s.",
+	"lte":              "The %s must be less than or equal to %s.",
+	"gt":               "The %s must be greater than %s.",
+	"lt":               "The %s must be less than %s.",
+	"eq":               "The %s must be equal to %s.",
+	"ne":               "The %s must not be equal to %s.",
+	"unique":           "The %s has already been taken.",
+	"exists":           "The selected %s is invalid.",
+	"date":             "The %s must be a valid date.",
+	"datetime":         "The %s must be a valid date and time.",
+	"timezone":         "The %s must be a valid timezone.",
+	"json":             "The %s must be a valid JSON string.",
+	"ip":               "The %s must be a valid IP address.",
+	"ipv4":             "The %s must be a valid IPv4 address.",
+	"ipv6":             "The %s must be a valid IPv6 address.",
+	"base64":           "The %s must be a valid base64 string.",
+	"required_if":      "The %s field is required when %s is present.",
+	"required_unless":  "The %s field is required unless %s is present.",
+	"required_with":    "The %s field is required when %s is present.",
+	"required_without": "The %s field is required when %s is not present.",
+}
 
-	switch fieldError.Tag() {
-	case "required":
-		return fmt.Sprintf("The %s field is required.", fieldName)
-	case "email":
-		return fmt.Sprintf("The %s must be a valid email address.", fieldName)
-	case "min":
-		return fmt.Sprintf("The %s must be at least %s characters.", fieldName, fieldError.Param())
-	case "max":
-		return fmt.Sprintf("The %s may not be greater than %s characters.", fieldName, fieldError.Param())
-	case "len":
-		return fmt.Sprintf("The %s must be exactly %s characters.", fieldName, fieldError.Param())
-	case "numeric":
-		return fmt.Sprintf("The %s must be a number.", fieldName)
-	case "alpha":
-		return fmt.Sprintf("The %s may only contain letters.", fieldName)
-	case "alphanum":
-		return fmt.Sprintf("The %s may only contain letters and numbers.", fieldName)
-	case "url":
-		return fmt.Sprintf("The %s must be a valid URL.", fieldName)
-	case "uuid":
-		return fmt.Sprintf("The %s must be a valid UUID.", fieldName)
-	case "oneof":
-		return fmt.Sprintf("The %s must be one of: %s.", fieldName, fieldError.Param())
-	case "gte":
-		return fmt.Sprintf("The %s must be greater than or equal to %s.", fieldName, fieldError.Param())
-	case "lte":
-		return fmt.Sprintf("The %s must be less than or equal to %s.", fieldName, fieldError.Param())
-	case "gt":
-		return fmt.Sprintf("The %s must be greater than %s.", fieldName, fieldError.Param())
-	case "lt":
-		return fmt.Sprintf("The %s must be less than %s.", fieldName, fieldError.Param())
-	case "eq":
-		return fmt.Sprintf("The %s must be equal to %s.", fieldName, fieldError.Param())
-	case "ne":
-		return fmt.Sprintf("The %s must not be equal to %s.", fieldName, fieldError.Param())
-	case "unique":
-		return fmt.Sprintf("The %s has already been taken.", fieldName)
-	case "exists":
-		return fmt.Sprintf("The selected %s is invalid.", fieldName)
-	case "date":
-		return fmt.Sprintf("The %s must be a valid date.", fieldName)
-	case "datetime":
-		return fmt.Sprintf("The %s must be a valid date and time.", fieldName)
-	case "timezone":
-		return fmt.Sprintf("The %s must be a valid timezone.", fieldName)
-	case "json":
-		return fmt.Sprintf("The %s must be a valid JSON string.", fieldName)
-	case "ip":
-		return fmt.Sprintf("The %s must be a valid IP address.", fieldName)
-	case "ipv4":
-		return fmt.Sprintf("The %s must be a valid IPv4 address.", fieldName)
-	case "ipv6":
-		return fmt.Sprintf("The %s must be a valid IPv6 address.", fieldName)
-	case "base64":
-		return fmt.Sprintf("The %s must be a valid base64 string.", fieldName)
-	case "required_if":
-		return fmt.Sprintf("The %s field is required when %s is present.", fieldName, fieldError.Param())
-	case "required_unless":
-		return fmt.Sprintf("The %s field is required unless %s is present.", fieldName, fieldError.Param())
-	case "required_with":
-		return fmt.Sprintf("The %s field is required when %s is present.", fieldName, fieldError.Param())
-	case "required_without":
-		return fmt.Sprintf("The %s field is required when %s is not present.", fieldName, fieldError.Param())
-	default:
-		// Generic error message
-		if fieldError.Param() != "" {
-			return fmt.Sprintf("The %s field is invalid. (%s: %s)", fieldName, fieldError.Tag(), fieldError.Param())
+// getErrorMessage generates a human-readable error message from a validation error.
+func getErrorMessage(fieldError validator.FieldError, fieldName string) string {
+	tag := fieldError.Tag()
+	param := fieldError.Param()
+
+	if tmpl, ok := validationTagMessages[tag]; ok {
+		if strings.Count(tmpl, "%s") == 2 {
+			return fmt.Sprintf(tmpl, fieldName, param)
 		}
-		return fmt.Sprintf("The %s field is invalid. (%s)", fieldName, fieldError.Tag())
+
+		return fmt.Sprintf(tmpl, fieldName)
 	}
+
+	if param != "" {
+		return fmt.Sprintf("The %s field is invalid. (%s: %s)", fieldName, tag, param)
+	}
+
+	return fmt.Sprintf("The %s field is invalid. (%s)", fieldName, tag)
 }

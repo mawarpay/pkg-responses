@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 
 	"github.com/gin-gonic/gin"
-	"github.com/mawarpay/pkg-responses"
+	response "github.com/mawarpay/pkg-responses"
 )
 
 func ExampleBuildResponseCode() {

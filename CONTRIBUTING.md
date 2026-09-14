@@ -24,9 +24,11 @@ make lint    # golangci-lint via Docker (optional)
 2. Create a feature branch: `git checkout -b feat/my-feature`
 3. Make your changes
 4. Add or update tests for new behavior
-5. Run `go test ./...` (and `golangci-lint run` if available)
+5. Run `make check` and `make lint` (or `golangci-lint run`)
 6. Commit with a descriptive message
 7. Push and open a Pull Request
+
+CI runs on every PR: tests (`-race`, Go 1.25+), lint, and security scans (`govulncheck`, gosec, CodeQL, Bearer). Tag `v*` triggers a library release via GoReleaser (changelog only).
 
 ## Code Guidelines
 

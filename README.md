@@ -2,7 +2,9 @@
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/mawarpay/pkg-responses)](https://go.dev/)
 [![License](https://img.shields.io/github/license/mawarpay/pkg-responses)](./LICENSE)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/mawarpay/pkg-responses/test.yml?branch=main)](https://github.com/mawarpay/pkg-responses/actions)
 [![Go Reference](https://pkg.go.dev/badge/github.com/mawarpay/pkg-responses.svg)](https://pkg.go.dev/github.com/mawarpay/pkg-responses)
+[![Go Report Card](https://goreportcard.com/badge/github.com/mawarpay/pkg-responses)](https://goreportcard.com/report/github.com/mawarpay/pkg-responses)
 
 Standardized Gin JSON responses for IlonaPay / MawarPay APIs using a 7-digit composite code:
 

@@ -1,6 +1,7 @@
 package response
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -27,7 +28,7 @@ func BenchmarkOkWithData(b *testing.B) {
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+		c.Request = httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 		OkWithData(c, payload)
 	}
 }
@@ -40,7 +41,7 @@ func BenchmarkResult(b *testing.B) {
 	for b.Loop() {
 		w := httptest.NewRecorder()
 		c, _ := gin.CreateTestContext(w)
-		c.Request = httptest.NewRequest(http.MethodGet, "/", nil)
+		c.Request = httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 		Result(
 			c,
 			http.StatusOK,

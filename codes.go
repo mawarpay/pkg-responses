@@ -33,7 +33,7 @@ const (
 // Ranges: success 01–10, validation 11–20, auth 21–30, not-found 31–44,
 // business 45–54, server 55–64, conflict 65–69, email/phone/2FA/bank 70–99.
 const (
-	// Success cases (01-10)
+	// Success cases (01-10).
 	CaseCodeSuccess            = "01" // General success
 	CaseCodeCreated            = "02" // Resource created
 	CaseCodeUpdated            = "03" // Resource updated
@@ -45,7 +45,7 @@ const (
 	CaseCodePasswordChanged    = "09" // Password changed
 	CaseCodeOperationCompleted = "10" // Operation completed
 
-	// Validation errors (11-20)
+	// Validation errors (11-20).
 	CaseCodeValidationError  = "11" // General validation error
 	CaseCodeRequiredField    = "12" // Required field missing
 	CaseCodeInvalidFormat    = "13" // Invalid format
@@ -57,7 +57,7 @@ const (
 	CaseCodeInvalidDate      = "19" // Invalid date format
 	CaseCodeInvalidRange     = "20" // Invalid range
 
-	// Authentication errors (21-30)
+	// Authentication errors (21-30).
 	CaseCodeUnauthorized       = "21" // Unauthorized access
 	CaseCodeInvalidToken       = "22" // Invalid token
 	CaseCodeTokenExpired       = "23" // Token expired
@@ -69,7 +69,7 @@ const (
 	CaseCodeTwoFactorRequired  = "29" // Two-factor authentication required
 	CaseCodeInvalidOTP         = "30" // Invalid OTP
 
-	// Not found errors (31-40)
+	// Not found errors (31-40).
 	CaseCodeNotFound                            = "31" // Resource not found
 	CaseCodeUserNotFound                        = "32" // User not found
 	CaseCodeAdminNotFound                       = "33" // Admin not found
@@ -85,7 +85,7 @@ const (
 	CaseCodeResourceNotFound                    = "43" // General resource not found
 	CaseCodeApiKeyNotFound                      = "44" // API key not found
 
-	// Business logic errors (45-53)
+	// Business logic errors (45-53).
 	CaseCodeInsufficientBalance = "45" // Insufficient balance
 	CaseCodeInvalidAmount       = "46" // Invalid amount
 	CaseCodeTransactionFailed   = "47" // Transaction failed
@@ -97,7 +97,7 @@ const (
 	CaseCodeExpiredTransaction  = "53" // Expired transaction
 	CaseCodeInvalidCurrency     = "54" // Invalid currency
 
-	// Server errors (55-63)
+	// Server errors (55-63).
 	CaseCodeInternalError        = "55" // Internal server error
 	CaseCodeDatabaseError        = "56" // Database error
 	CaseCodeExternalServiceError = "57" // External service error
@@ -109,28 +109,28 @@ const (
 	CaseCodeEncryptionError      = "63" // Encryption error
 	CaseCodeDecryptionError      = "64" // Decryption error
 
-	// Conflict errors (65-69)
+	// Conflict errors (65-69).
 	CaseCodeConflict               = "65" // General conflict
 	CaseCodeResourceExists         = "66" // Resource already exists
 	CaseCodeConcurrentModification = "67" // Concurrent modification
 	CaseCodeVersionMismatch        = "68" // Version mismatch
 	CaseCodeStateConflict          = "69" // State conflict
 
-	// Email change (70-74)
+	// Email change (70-74).
 	CaseCodeEmailChangeRequested    = "70" // Email change OTP sent
 	CaseCodeEmailChangeVerified     = "71" // Email change confirmed
 	CaseCodeEmailChangeCancelled    = "72" // Email change cancelled
 	CaseCodeEmailAlreadyUsed        = "73" // Email already registered to another account
 	CaseCodeEmailVerificationFailed = "74" // Email OTP verification failed
 
-	// Phone change (75-79)
+	// Phone change (75-79).
 	CaseCodePhoneChangeRequested    = "75" // Phone change OTP sent
 	CaseCodePhoneChangeVerified     = "76" // Phone change confirmed
 	CaseCodePhoneChangeCancelled    = "77" // Phone change cancelled
 	CaseCodePhoneAlreadyUsed        = "78" // Phone already registered to another account
 	CaseCodePhoneVerificationFailed = "79" // Phone OTP verification failed
 
-	// Two-factor authentication (80-89)
+	// Two-factor authentication (80-89).
 	CaseCode2FAEnabled             = "80" // 2FA enabled
 	CaseCode2FADisabled            = "81" // 2FA disabled
 	CaseCode2FASetupInitiated      = "82" // 2FA setup started (secret + QR generated)
@@ -142,14 +142,14 @@ const (
 	CaseCode2FARecoveryCodeUsed    = "88" // 2FA bypass via recovery code
 	CaseCode2FARecoveryCodeInvalid = "89" // Recovery code invalid or already used
 
-	// Bank (90-94)
+	// Bank (90-94).
 	CaseCodeBankNotFound      = "90" // Bank not found
 	CaseCodeBankInactive      = "91" // Bank is inactive / not available
 	CaseCodeBankAlreadyExists = "92" // Bank already registered
 	CaseCodeBankCreated       = "93" // Bank created
 	CaseCodeBankUpdated       = "94" // Bank updated
 
-	// Bank account (95-99)
+	// Bank account (95-99).
 	CaseCodeBankAccountNotFound      = "95" // Bank account not found
 	CaseCodeBankAccountInvalid       = "96" // Bank account number invalid or unverifiable
 	CaseCodeBankAccountAlreadyExists = "97" // Bank account already registered
@@ -174,6 +174,7 @@ const (
 func BuildResponseCode(httpStatus int, serviceCode, caseCode string) int {
 	svc, _ := strconv.Atoi(serviceCode)
 	cs, _ := strconv.Atoi(caseCode)
+
 	return httpStatus*10000 + svc*100 + cs
 }
 
@@ -183,6 +184,7 @@ var twoDigitStrings = func() (a [100]string) {
 	for i := range a {
 		a[i] = string([]byte{byte('0' + i/10), byte('0' + i%10)})
 	}
+
 	return a
 }()
 
@@ -203,5 +205,6 @@ func ParseResponseCode(code int) (httpStatus int, serviceCode, caseCode string) 
 	httpStatus = code / 10_000
 	serviceCode = twoDigitStrings[(code/100)%100]
 	caseCode = twoDigitStrings[code%100]
+
 	return httpStatus, serviceCode, caseCode
 }

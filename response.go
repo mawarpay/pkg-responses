@@ -9,9 +9,9 @@ import (
 // CommonResponse is the standard JSON body for success and most error responses.
 // Code is the 7-digit composite (HTTP status + service + case).
 type CommonResponse struct {
-	Code    int         `json:"code"` // Custom response code: HTTP_STATUS + SERVICE_CODE + CASE_CODE (e.g., 2000401)
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Code    int    `json:"code"` // Custom response code: HTTP_STATUS + SERVICE_CODE + CASE_CODE (e.g., 2000401)
+	Message string `json:"message"`
+	Data    any    `json:"data"`
 }
 
 // WriteParams groups fields for [Write]. Prefer this over long Result argument lists.
@@ -19,7 +19,7 @@ type WriteParams struct {
 	HTTPStatus  int
 	ServiceCode string
 	CaseCode    string
-	Data        interface{}
+	Data        any
 	Message     string
 }
 
@@ -40,7 +40,7 @@ func Result(
 	ctx *gin.Context,
 	httpStatus int,
 	serviceCode, caseCode string,
-	data interface{},
+	data any,
 	message string,
 ) {
 	Write(ctx, WriteParams{
@@ -58,7 +58,7 @@ func ResultWithCode(
 	ctx *gin.Context,
 	httpStatus int,
 	responseCode int,
-	data interface{},
+	data any,
 	message string,
 ) {
 	ctx.JSON(httpStatus, CommonResponse{
@@ -93,7 +93,7 @@ func OkWithMessage(ctx *gin.Context, message string) {
 }
 
 // OkWithData writes HTTP 200 with CaseCodeRetrieved and the given data payload.
-func OkWithData(ctx *gin.Context, data interface{}) {
+func OkWithData(ctx *gin.Context, data any) {
 	Result(
 		ctx,
 		http.StatusOK,
@@ -106,11 +106,11 @@ func OkWithData(ctx *gin.Context, data interface{}) {
 
 // CursorPaginatedResponse is the top-level JSON shape for cursor-based pagination.
 type CursorPaginatedResponse struct {
-	Code       int         `json:"code"`       // Custom response code
-	Message    string      `json:"message"`    // Response message
-	Data       interface{} `json:"data"`       // The actual data array
-	NextCursor *string     `json:"nextCursor"` // Cursor for the next page (null if no more pages)
-	HasNext    bool        `json:"hasNext"`    // Whether there are more items available
+	Code       int     `json:"code"`       // Custom response code
+	Message    string  `json:"message"`    // Response message
+	Data       any     `json:"data"`       // The actual data array
+	NextCursor *string `json:"nextCursor"` // Cursor for the next page (null if no more pages)
+	HasNext    bool    `json:"hasNext"`    // Whether there are more items available
 }
 
 // CursorPaginatedParams groups fields for [WriteCursorPaginated].
@@ -154,13 +154,13 @@ func CursorPaginated(
 
 // SimplePaginatedResponse is the top-level JSON shape for offset pagination.
 type SimplePaginatedResponse struct {
-	Code       int         `json:"code"`       // Custom response code
-	Message    string      `json:"message"`    // Response message
-	Data       interface{} `json:"data"`       // The actual data array
-	PageNumber int         `json:"pageNumber"` // Current page number
-	PageSize   int         `json:"pageSize"`   // Number of items per page
-	HasNext    bool        `json:"hasNext"`    // Whether there is a next page
-	HasPrev    bool        `json:"hasPrev"`    // Whether there is a previous page
+	Code       int    `json:"code"`       // Custom response code
+	Message    string `json:"message"`    // Response message
+	Data       any    `json:"data"`       // The actual data array
+	PageNumber int    `json:"pageNumber"` // Current page number
+	PageSize   int    `json:"pageSize"`   // Number of items per page
+	HasNext    bool   `json:"hasNext"`    // Whether there is a next page
+	HasPrev    bool   `json:"hasPrev"`    // Whether there is a previous page
 }
 
 // SimplePaginatedParams groups fields for [WriteSimplePaginated].
@@ -210,7 +210,7 @@ func OkWithDetailed(
 	ctx *gin.Context,
 	httpStatus int,
 	serviceCode, caseCode string,
-	data interface{},
+	data any,
 	message string,
 ) {
 	Result(
@@ -225,10 +225,11 @@ func OkWithDetailed(
 
 // Created writes HTTP 201 with CaseCodeCreated.
 // An empty message defaults to "Resource created successfully".
-func Created(ctx *gin.Context, serviceCode string, data interface{}, message string) {
+func Created(ctx *gin.Context, serviceCode string, data any, message string) {
 	if message == "" {
 		message = "Resource created successfully"
 	}
+
 	Result(
 		ctx,
 		http.StatusCreated,
@@ -241,10 +242,11 @@ func Created(ctx *gin.Context, serviceCode string, data interface{}, message str
 
 // Updated writes HTTP 200 with CaseCodeUpdated.
 // An empty message defaults to "Resource updated successfully".
-func Updated(ctx *gin.Context, serviceCode string, data interface{}, message string) {
+func Updated(ctx *gin.Context, serviceCode string, data any, message string) {
 	if message == "" {
 		message = "Resource updated successfully"
 	}
+
 	Result(
 		ctx,
 		http.StatusOK,
@@ -257,10 +259,11 @@ func Updated(ctx *gin.Context, serviceCode string, data interface{}, message str
 
 // Deleted writes HTTP 200 with CaseCodeDeleted and a nil data payload.
 // An empty message defaults to "Resource deleted successfully".
-func Deleted(ctx *gin.Context, serviceCode string, message string) {
+func Deleted(ctx *gin.Context, serviceCode, message string) {
 	if message == "" {
 		message = "Resource deleted successfully"
 	}
+
 	Result(
 		ctx,
 		http.StatusOK,
@@ -301,7 +304,7 @@ func FailWithDetailed(
 	ctx *gin.Context,
 	httpStatus int,
 	serviceCode, caseCode string,
-	data interface{},
+	data any,
 	message string,
 ) {
 	Result(
@@ -345,6 +348,7 @@ func ValidationErrorWithMessage(
 	if message == "" {
 		message = "The given data was invalid."
 	}
+
 	if errors == nil {
 		errors = make(map[string][]string)
 	}
@@ -386,6 +390,7 @@ func UnauthorizedError(ctx *gin.Context, message string) {
 	if message == "" {
 		message = "Unauthorized"
 	}
+
 	Result(
 		ctx,
 		http.StatusUnauthorized,
@@ -399,13 +404,15 @@ func UnauthorizedError(ctx *gin.Context, message string) {
 // NotFoundError writes HTTP 404 for a missing resource.
 // An empty message defaults to "Resource not found".
 // An empty caseCode defaults to CaseCodeNotFound.
-func NotFoundError(ctx *gin.Context, serviceCode, caseCode string, message string) {
+func NotFoundError(ctx *gin.Context, serviceCode, caseCode, message string) {
 	if message == "" {
 		message = "Resource not found"
 	}
+
 	if caseCode == "" {
 		caseCode = CaseCodeNotFound
 	}
+
 	Result(
 		ctx,
 		http.StatusNotFound,
@@ -418,10 +425,11 @@ func NotFoundError(ctx *gin.Context, serviceCode, caseCode string, message strin
 
 // ConflictError writes HTTP 409 with CaseCodeConflict.
 // An empty message defaults to "Resource conflict".
-func ConflictError(ctx *gin.Context, serviceCode string, message string) {
+func ConflictError(ctx *gin.Context, serviceCode, message string) {
 	if message == "" {
 		message = "Resource conflict"
 	}
+
 	Result(
 		ctx,
 		http.StatusConflict,
@@ -438,6 +446,7 @@ func ForbiddenError(ctx *gin.Context, message string) {
 	if message == "" {
 		message = "Forbidden"
 	}
+
 	Result(
 		ctx,
 		http.StatusForbidden,
